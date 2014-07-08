@@ -862,15 +862,22 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory,           $
       // current promise is, so that we can detect overlapping transitions and
       // keep only the outcome of the last transition.
       var transition = $state.transition = resolved.then(function () {
-        var l, entering, exiting;
+        var l, entering, exiting, injectorLocals;
 
         if ($state.transition !== transition) return TransitionSuperseded;
+
+        var contextStates = {
+          $stateOld: $state.$current,
+          $stateNew: toPath[toPath.length - 1]
+        };
 
         // Exit 'from' states not kept
         for (l=fromPath.length-1; l>=keep; l--) {
           exiting = fromPath[l];
           if (exiting.self.onExit) {
-            $injector.invoke(exiting.self.onExit, exiting.self, exiting.locals.globals);
+            injectorLocals = exiting.locals ? copy(exiting.locals.globals) : {};
+            extend(injectorLocals, contextStates);
+            $injector.invoke(exiting.self.onExit, exiting.self, injectorLocals);
           }
           exiting.locals = null;
         }
@@ -880,7 +887,9 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory,           $
           entering = toPath[l];
           entering.locals = toLocals[l];
           if (entering.self.onEnter) {
-            $injector.invoke(entering.self.onEnter, entering.self, entering.locals.globals);
+            injectorLocals = entering.locals ? copy(entering.locals.globals) : {};
+            extend(injectorLocals, contextStates);
+            $injector.invoke(entering.self.onEnter, entering.self, injectorLocals);
           }
         }
 
