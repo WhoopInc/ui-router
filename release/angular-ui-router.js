@@ -1,6 +1,6 @@
 /**
  * State-based routing for AngularJS
- * @version v0.2.10-whoop1-dev-2014-07-08
+ * @version v0.2.10-whoop2-dev-2014-07-09
  * @link http://angular-ui.github.com/
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -2080,9 +2080,11 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory,           $
 
         if ($state.transition !== transition) return TransitionSuperseded;
 
-        var contextStates = {
-          $stateOld: $state.$current,
-          $stateNew: toPath[toPath.length - 1]
+        var extraInjectables = {
+          $oldState: from.self,
+          $newState: to.self,
+          $oldStateParams: from.locals && from.locals.globals.$stateParams,
+          $newStateParams: toLocals[toLocals.length - 1].globals.$stateParams
         };
 
         // Exit 'from' states not kept
@@ -2090,7 +2092,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory,           $
           exiting = fromPath[l];
           if (exiting.self.onExit) {
             injectorLocals = exiting.locals ? copy(exiting.locals.globals) : {};
-            extend(injectorLocals, contextStates);
+            extend(injectorLocals, extraInjectables);
             $injector.invoke(exiting.self.onExit, exiting.self, injectorLocals);
           }
           exiting.locals = null;
@@ -2102,7 +2104,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory,           $
           entering.locals = toLocals[l];
           if (entering.self.onEnter) {
             injectorLocals = entering.locals ? copy(entering.locals.globals) : {};
-            extend(injectorLocals, contextStates);
+            extend(injectorLocals, extraInjectables);
             $injector.invoke(entering.self.onEnter, entering.self, injectorLocals);
           }
         }
